@@ -1,0 +1,25 @@
+# Build artifacts
+bin/
+dist/
+
+# Go test output
+*.test
+*.out
+coverage.html
+coverage.txt
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Local runtime / logs (if deepwork is run from the repo during dev)
+*.log
+.deepwork-local/

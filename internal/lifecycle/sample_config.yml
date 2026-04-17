@@ -1,0 +1,25 @@
+# deepwork config — ~/.deepwork/config.yml
+# Blocks the listed sites during any matching schedule window.
+# Edit with: deepwork edit
+
+# Optional. If omitted, the machine's local timezone is used.
+# timezone: Europe/Paris
+
+sites:
+  - linkedin.com
+  - twitter.com
+  - x.com
+  - reddit.com
+  - news.ycombinator.com
+  - youtube.com
+
+schedules:
+  - name: deep_work_morning
+    days: [mon, tue, wed, thu, fri]
+    start: "09:00"
+    end: "12:00"
+
+  - name: deep_work_afternoon
+    days: [mon, tue, wed, thu, fri]
+    start: "14:00"
+    end: "17:00"
