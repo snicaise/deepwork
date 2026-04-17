@@ -19,6 +19,7 @@ const (
 	MarkerEnd   = "# DEEPWORK_END"
 	LockPath    = "/var/run/deepwork-apply.lock"
 	BlockIP     = "0.0.0.0"
+	BlockIP6    = "::"
 )
 
 // Apply ensures hostsPath contains a deepwork block with exactly the given domains.
@@ -43,15 +44,17 @@ func Clear(hostsPath string) error {
 	return rewrite(hostsPath, nil)
 }
 
-// ExistingBlock returns the domain list currently present inside the DEEPWORK
-// markers of hostsPath, or an empty slice if no block is present.
+// ExistingBlock returns the domains that are fully blocked (both IPv4 and IPv6
+// lines present) inside the DEEPWORK markers of hostsPath. A domain with only
+// one of the two is treated as not-yet-applied so reconcile will rewrite.
 // Safe to call from user-space (read-only).
 func ExistingBlock(hostsPath string) ([]string, error) {
 	content, err := os.ReadFile(hostsPath)
 	if err != nil {
 		return nil, err
 	}
-	var out []string
+	v4 := map[string]bool{}
+	v6 := map[string]bool{}
 	inBlock := false
 	for _, rawLine := range bytes.Split(content, []byte("\n")) {
 		line := strings.TrimSpace(string(rawLine))
@@ -66,10 +69,23 @@ func ExistingBlock(hostsPath string) ([]string, error) {
 			continue
 		}
 		fields := strings.Fields(line)
-		if len(fields) >= 2 && fields[0] == BlockIP {
-			out = append(out, fields[1])
+		if len(fields) < 2 {
+			continue
+		}
+		switch fields[0] {
+		case BlockIP:
+			v4[fields[1]] = true
+		case BlockIP6:
+			v6[fields[1]] = true
 		}
 	}
+	var out []string
+	for d := range v4 {
+		if v6[d] {
+			out = append(out, d)
+		}
+	}
+	sort.Strings(out)
 	return out, nil
 }
 
@@ -127,6 +143,7 @@ func writeBlock(buf *bytes.Buffer, domains []string) {
 	buf.WriteByte('\n')
 	for _, d := range sorted {
 		fmt.Fprintf(buf, "%s %s\n", BlockIP, d)
+		fmt.Fprintf(buf, "%s %s\n", BlockIP6, d)
 	}
 	buf.WriteString(MarkerEnd)
 	buf.WriteByte('\n')

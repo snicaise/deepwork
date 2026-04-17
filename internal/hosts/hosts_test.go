@@ -149,3 +149,39 @@ func TestStripBlock_HandlesMissingNewlines(t *testing.T) {
 		t.Errorf("block not stripped: %q", got)
 	}
 }
+
+func TestRewrite_EmitsIPv6Line(t *testing.T) {
+	path := setupHosts(t, baseHosts)
+	if err := rewrite(path, []string{"linkedin.com"}); err != nil {
+		t.Fatal(err)
+	}
+	got := readHosts(t, path)
+	if !strings.Contains(got, "0.0.0.0 linkedin.com") {
+		t.Errorf("missing v4 line:\n%s", got)
+	}
+	if !strings.Contains(got, ":: linkedin.com") {
+		t.Errorf("missing v6 line — IPv6 traffic unblocked:\n%s", got)
+	}
+}
+
+func TestExistingBlock_RequiresBothFamilies(t *testing.T) {
+	v4Only := baseHosts + "# DEEPWORK_START\n0.0.0.0 a.com\n# DEEPWORK_END\n"
+	path := setupHosts(t, v4Only)
+	got, err := ExistingBlock(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Errorf("v4-only block should count as not-applied, got %v", got)
+	}
+
+	both := baseHosts + "# DEEPWORK_START\n0.0.0.0 a.com\n:: a.com\n# DEEPWORK_END\n"
+	path2 := setupHosts(t, both)
+	got2, err := ExistingBlock(path2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got2) != 1 || got2[0] != "a.com" {
+		t.Errorf("expected [a.com], got %v", got2)
+	}
+}
