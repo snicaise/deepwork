@@ -95,7 +95,8 @@ Si un navigateur utilise DoH (DNS over HTTPS), ses requetes court-circuitent le 
 Notes :
 - **Chrome** garde un cache DNS interne. Apres le premier blocage, visite `chrome://net-internals/#dns` pour le flusher, ou relance Chrome.
 - **HSTS** peut produire des erreurs moches sur les sites HTTPS deja visites — c'est attendu, pas un bug.
-- **Safari** utilise le resolver systeme, pas de DoH, toujours bloque correctement.
+- **Safari** utilise le resolver systeme (pas de DoH), mais maintient son propre cache DNS in-process. `deepwork-apply` tue `com.apple.WebKit.Networking` apres chaque flush pour le contourner.
+- **iCloud Private Relay** bypass totalement `/etc/hosts` pour Safari. A desactiver dans `System Settings → Apple ID → iCloud → Private Relay` si tu veux que le blocage marche sur Safari.
 
 ## Desinstallation
 
